@@ -759,7 +759,7 @@ def redefinir_senha(id):
         return redirect(
             url_for("esqueci_senha")
         )
-# ------------------ Rota do Dashboard ------------------ #
+# ------------------ Rota Dashboard ------------------ #
 @app.route("/dashboard")
 def dashboard():
 
@@ -776,8 +776,18 @@ def dashboard():
 
     try:
 
+        from datetime import datetime
+
         con = conectar()
         cursor = con.cursor()
+
+        # ==========================
+        # PERÍODO ANALISADO
+        # ==========================
+
+        periodo_analisado = datetime.now().strftime(
+            "%m/%Y"
+        )
 
         # ==========================
         # TOTAL DE RECEITAS
@@ -794,7 +804,9 @@ def dashboard():
             )
         )
 
-        total_receitas = cursor.fetchone()[0]
+        total_receitas = float(
+            cursor.fetchone()[0]
+        )
 
         # ==========================
         # TOTAL DE DESPESAS
@@ -805,14 +817,15 @@ def dashboard():
             SELECT COALESCE(SUM(valor), 0)
             FROM despesas
             WHERE usuario_id = %s
-            """
-            ,
+            """,
             (
                 session["usuario_id"],
             )
         )
 
-        total_despesas = cursor.fetchone()[0]
+        total_despesas = float(
+            cursor.fetchone()[0]
+        )
 
         # ==========================
         # TOTAL DE METAS
@@ -823,8 +836,8 @@ def dashboard():
             SELECT COUNT(*)
             FROM metas
             WHERE usuario_id = %s
-            """
-            ,
+            AND status <> 'Cancelada'
+            """,
             (
                 session["usuario_id"],
             )
@@ -838,20 +851,201 @@ def dashboard():
 
         saldo = total_receitas - total_despesas
 
+        # ==========================
+        # SAÚDE FINANCEIRA
+        # ==========================
+
+        if total_receitas > 0:
+
+            percentual_gasto = (
+                total_despesas /
+                total_receitas
+            ) * 100
+
+            if percentual_gasto <= 50:
+
+                saude_financeira = "Boa"
+
+            elif percentual_gasto <= 80:
+
+                saude_financeira = "Atenção"
+
+            else:
+
+                saude_financeira = "Risco"
+
+        else:
+
+            percentual_gasto = 0
+
+            saude_financeira = "Sem Dados"
+
+        # ==========================
+        # TAXA DE ECONOMIA
+        # ==========================
+
+        if total_receitas > 0:
+
+            taxa_economia = (
+                saldo /
+                total_receitas
+            ) * 100
+
+        else:
+
+            taxa_economia = 0
+
+        # ==========================
+        # CONTAS EM ABERTO
+        # ==========================
+
+        cursor.execute(
+            """
+            SELECT
+                COUNT(*),
+                COALESCE(SUM(valor), 0)
+            FROM despesas
+            WHERE usuario_id = %s
+            AND status IN
+            (
+                'Pendente',
+                'Atrasada'
+            )
+            """,
+            (
+                session["usuario_id"],
+            )
+        )
+
+        resultado = cursor.fetchone()
+
+        qtd_pendentes = resultado[0]
+
+        valor_pendentes = float(
+            resultado[1]
+        )
+
+        # ==========================
+        # CONTAS ATRASADAS
+        # ==========================
+
+        cursor.execute(
+            """
+            SELECT
+                COUNT(*),
+                COALESCE(SUM(valor), 0)
+            FROM despesas
+            WHERE usuario_id = %s
+            AND status = 'Atrasada'
+            """,
+            (
+                session["usuario_id"],
+            )
+        )
+
+        resultado = cursor.fetchone()
+
+        qtd_atrasadas = resultado[0]
+
+        valor_atrasadas = float(
+            resultado[1]
+        )
+
+        # ==========================
+        # VALOR GUARDADO EM METAS
+        # ==========================
+
+        cursor.execute(
+            """
+            SELECT
+                COALESCE(SUM(valor_atual), 0)
+            FROM metas
+            WHERE usuario_id = %s
+            AND status <> 'Cancelada'
+            """,
+            (
+                session["usuario_id"],
+            )
+        )
+
+        valor_guardado = float(
+            cursor.fetchone()[0]
+        )
+
+        # ==========================
+        # RECOMENDAÇÃO AUTOMÁTICA
+        # ==========================
+
+        if qtd_atrasadas > 0:
+
+            recomendacao = (
+                "Regularize suas contas atrasadas "
+                "para evitar juros e multas."
+            )
+
+        elif percentual_gasto > 80:
+
+            recomendacao = (
+                "Seus gastos estão elevados. "
+                "Revise despesas não essenciais."
+            )
+
+        elif saldo > 0 and total_metas > 0:
+
+            recomendacao = (
+                "Você possui saldo disponível. "
+                "Considere reforçar suas metas financeiras."
+            )
+
+        else:
+
+            recomendacao = (
+                "Continue acompanhando suas finanças "
+                "regularmente."
+            )
+
         cursor.close()
         con.close()
 
         return render_template(
             "dashboard.html",
+
+            periodo_analisado=periodo_analisado,
+
             total_receitas=total_receitas,
             total_despesas=total_despesas,
             saldo=saldo,
-            total_metas=total_metas
+
+            total_metas=total_metas,
+
+            saude_financeira=saude_financeira,
+            percentual_gasto=round(
+                percentual_gasto,
+                1
+            ),
+
+            taxa_economia=round(
+                taxa_economia,
+                1
+            ),
+
+            qtd_pendentes=qtd_pendentes,
+            valor_pendentes=valor_pendentes,
+
+            qtd_atrasadas=qtd_atrasadas,
+            valor_atrasadas=valor_atrasadas,
+
+            valor_guardado=valor_guardado,
+
+            recomendacao=recomendacao
         )
 
     except Exception as erro:
 
-        print("Erro:", erro)
+        print(
+            "Erro ao carregar dashboard:",
+            erro
+        )
 
         flash(
             "Erro ao carregar dashboard.",

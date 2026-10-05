@@ -3,29 +3,66 @@
 {% block content %}
 
 <div class="container">
-
+    <div class="dashboard-header">
     <h1>Dashboard Financeiro</h1>
 
     <p>
         Bem-vindo, {{ session["usuario_nome"] }}
     </p>
-
+    </div>
 </div>
 
 <section class="benefits">
 
-    <a href=" {{ url_for('receitas') }}" i class="card dashboard-card">
+    <div class="card dashboard-card">
+
+        <i class="btn btn-navpri fa-solid fa-calendar-days"></i>
+<br>
+        <h3>Base de Dados</h3>
+
+        <p>{{ periodo_analisado }}</p>
+
+        <p>Dados acumulados cadastrados</p>
+
+    </div>
+
+    <div class="card dashboard-card">
+
+        <i class="btn btn-navpri fa-solid fa-chart-line"></i>
+<br>
+        <h3>Taxa de Economia</h3>
+
+        <p>{{ taxa_economia }}%</p>
+
+        <p>Percentual da renda que permaneceu disponível.</p>
+
+    </div>
+
+    <div class="card dashboard-card">
+
+        <i class="btn btn-navpri fa-solid fa-lightbulb"></i>
+<br>
+        <h3>Recomendação</h3>
+
+        <p>{{ recomendacao }}</p>
+
+    </div>
+
+</section>
+
+    <div class="container">
+
+<h2>💰 Situação Financeira</h2>
+
+</div>
+<section class="benefits">
+<a href=" {{ url_for('receitas') }}" i class="card dashboard-card">
 
         <i class="btn btn-navpri fa-solid fa-money-bill-wave"></i>
 <br>
         <h3>Receitas</h3>
  
         <p>R$ {{ total_receitas }}</p>
-
-        <p>
-            Cadastre e acompanhe suas entradas financeiras.
-        </p>
-
     </a>
 
      <a href="{{ url_for('despesas') }}"  i class="card dashboard-card">
@@ -35,10 +72,6 @@
         <h3>Despesas</h3>
 
         <p>R$ {{ total_despesas }}</p>
-
-        <p>
-            Gerencie gastos, vencimentos e pagamentos.
-        </p>
 
     </a>
 
@@ -50,28 +83,101 @@
 
         <p>R$ {{ saldo }}</p>
 
+    </div>
+    
+    
+    <div class="card dashboard-card">
+
+        <i class="btn btn-navpri fa-solid fa-heart-pulse"></i>
+<br>
+        <h3>Saúde Financeira</h3>
+
         <p>
-            Resultado entre receitas e despesas.
+            {% if saude_financeira == "Boa" %}
+
+            ✅ Boa
+
+            {% elif saude_financeira == "Atenção" %}
+
+            ⚠️ Atenção
+
+            {% else %}
+
+            🚨 Risco
+
+            {% endif %}
+
         </p>
+
+        <p>{{ percentual_gasto }}% da renda comprometida.</p>
+
+    </div>
+     
+</section>
+    
+    <div class="container">
+
+        <h2>⚠️ Compromissos Financeiros</h2>
 
     </div>
 
+<section class="benefits">    
+
+    <div class="card dashboard-card">
+
+        <i class="btn btn-navpri fa-solid fa-clock"></i>
+<br>
+        <h3>Contas em Aberto</h3>
+
+        <p>{{ qtd_pendentes }} conta(s)</p>
+
+        <p>R$ {{ valor_pendentes }}</p>
+
+    </div>
+
+    <div class="card dashboard-card">
+
+        <i class="btn btn-negativo fa-solid fa-triangle-exclamation"></i>
+<br>
+        <h3>Atrasadas</h3>
+
+        <p>{{ qtd_atrasadas }} conta(s)</p>
+        <p>R$ {{ valor_atrasadas }}</p>
     
-     <a href="{{ url_for('metas') }}"  i class="card dashboard-card">
+    </div>
+
+</section>
+    
+    <div class="container">
+
+        <h2>🎯 Planejamento Financeiro</h2>
+
+    </div>
+
+<section class="benefits">
+
+    <a href="{{ url_for('metas') }}"  i class="card dashboard-card">
 
         <i class="btn btn-navpri fa-solid fa-bullseye"></i>
 <br>
         <h3>Metas</h3>
 
-        <p>{{ total_metas }} Meta ativa </p>
-
-        <p>
-            Acompanhe seus objetivos financeiros.
-        </p>
+        <p>{{ total_metas }} Meta (s) ativa (s) </p>
 
     </a>
 
-    
+    <div class="card dashboard-card">
+
+        <i class="btn btn-navpri fa-solid fa-piggy-bank"></i>
+<br>
+
+        <h3>Valor Guardado</h3>
+
+        <p>R$ {{ valor_guardado }}</p>
+
+        <p>Total acumulado nas metas financeiras.</p>
+
+    </div>
 
 </section>
 
