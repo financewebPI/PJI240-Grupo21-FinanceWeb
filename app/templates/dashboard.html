@@ -3,182 +3,481 @@
 {% block content %}
 
 <div class="container">
+
     <div class="dashboard-header">
-    <h1>Dashboard Financeiro</h1>
+
+        <h1>Dashboard Financeiro</h1>
 
     <p>
         Bem-vindo, {{ session["usuario_nome"] }}
     </p>
+   
+        <h3>📊 Visão Geral</h3>
+
+        
+
+<section class="dashboard-metrics">  
+
+    <div class="metric-card">
+        
+        <div class="metric-title"> Base de Dados </div>
+
+        <div class="metric-value metric-positive"> {{ periodo_analisado }} </div>
+
     </div>
+
+    <div class="metric-card">
+        <div class="metric-title"> Receitas </div>
+
+        <div class="metric-value metric-positive"> R$ {{ "%.2f"|format(total_receitas) }} </div>
+    
+    </div>
+
+    <div class="metric-card">
+        <div class="metric-title"> Despesas </div>
+
+        <div class="metric-value metric-negative"> R$ {{ "%.2f"|format(total_despesas) }} </div>
+    
+    </div>
+
+    <div class="metric-card">
+        <div class="metric-title"> Saldo Atual </div>
+
+        <div class="metric-value"> R$ {{ "%.2f"|format(saldo) }} </div>
+    
+    </div>      
+
+</section>
+<section class="dashboard-metrics">    
+
+    <div class="metric-card">
+
+    <div class="metric-title">
+        Saúde Financeira
+    </div>
+
+<div class="health-bar">
+
+    <div
+        class="health-fill
+        {% if saude_financeira == 'Boa' %}
+            health-good
+        {% elif saude_financeira == 'Atenção' %}
+            health-warning
+        {% else %}
+            health-risk
+        {% endif %}"
+        data-width="{{ 100 - percentual_gasto }}"
+        style="width: 0%;">
+    </div>
+
 </div>
 
-<section class="benefits">
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        document.querySelectorAll('.health-fill[data-width]').forEach(function (element) {
+            const width = Number(element.dataset.width) || 0;
+            element.style.width = width + '%';
+        });
+    });
+</script>
 
-    <div class="card dashboard-card">
+    <div class="health-status">
 
-        <i class="btn btn-navpri fa-solid fa-calendar-days"></i>
-<br>
-        <h3>Base de Dados</h3>
+    {% if saude_financeira == "Boa" %}
+        ✅ Boa
+    {% elif saude_financeira == "Atenção" %}
+        ⚠️ Atenção
+    {% else %}
+        🚨 Risco
+    {% endif %}
 
-        <p>{{ periodo_analisado }}</p>
+</div>
 
-        <p>Dados acumulados cadastrados</p>
+    <div class="metric-value">
+        {{ taxa_economia }}%
+    </div>
+
+    <div class="health-text">
+        de saúde financeira
+    </div>    
+
+    <div class="health-score">
+        {{ percentual_gasto }}%
+    </div>
+
+    <div class="health-text">
+        da renda comprometida
+    </div>
 
     </div>
 
-    <div class="card dashboard-card">
+    <div class="metric-card">
+        
+        <div class="metric-title"> Recomendação </div>
 
-        <i class="btn btn-navpri fa-solid fa-chart-line"></i>
-<br>
-        <h3>Taxa de Economia</h3>
+        <div class="metric-value"> {{ recomendacao }} </div>
+        <br>
+  
+        {% if prioridade_tipo == "vencida" %}
 
-        <p>{{ taxa_economia }}%</p>
+            <div class="metric-title">
+                🔴 Ação Imediata
+            </div>
 
-        <p>Percentual da renda que permaneceu disponível.</p>
+            <div class="metric-value">
+                {{ prioridade[0] }}
+            </div>
+
+            <div class="health-text">
+                Conta vencida
+            </div>
+
+            <div class="goal-value">
+                R$ {{ "%.2f"|format(prioridade[1]) }}
+            </div>
+
+        {% elif prioridade_tipo == "vencimento" %}
+
+            <div class="prioridade-financeira">
+                🟡 Atenção
+            </div>
+
+            <div class="metric-value">
+                {{ prioridade[0] }}
+            </div>
+
+            <div class="health-text">
+                Vence em breve
+            </div>
+
+            <div class="goal-value">
+                R$ {{ "%.2f"|format(prioridade[1]) }}
+            </div>
+
+        {% else %}
+
+            <div class="metric-title">
+                ✅ Situação Controlada
+            </div>
+
+            <div class="health-text">
+                Nenhuma ação urgente no momento.
+            </div>
+
+        {% endif %}
+
+    
+
+
+
+    </div> 
+
+</section>
+
+        <h3>⚠️ Alertas de Vencimento</h3>
+
+</section>
+
+<section class="dashboard-metrics">
+
+
+    <div class="metric-card">
+
+        {% if alertas_vencimento %}
+
+            {% for conta in alertas_vencimento %}
+
+                <div class="alerta-item">
+
+                    <strong>
+                        {{ conta[0] }}
+                    </strong>
+
+                    <br>
+
+                    <div class="alerta-prazo">
+                    Vence em:
+                    {{ conta[2] }}
+                    </div>    
+                    <br>
+
+                    R$ {{ "%.2f"|format(conta[1]) }}
+
+                </div>
+
+            {% endfor %}
+
+        {% else %}
+
+            Nenhum vencimento nos próximos 3 dias ✅
+
+        {% endif %}
 
     </div>
 
-    <div class="card dashboard-card">
+</section>       
 
-        <i class="btn btn-navpri fa-solid fa-lightbulb"></i>
-<br>
-        <h3>Recomendação</h3>
+        <h3>⚠️ Compromissos Financeiros</h3>
 
-        <p>{{ recomendacao }}</p>
+<section class="dashboard-metrics">
+
+    <div class="metric-card">
+
+        <div class="metric-title">
+            📋 Próximos Compromissos
+        </div>
+
+        {% if proximos_compromissos %}
+
+            {% for conta in proximos_compromissos %}
+
+                <div class="compromisso-item">
+
+                    <strong>{{ conta[0] }}</strong>
+
+                    <br>
+
+                    Vence:
+                    {{ conta[2].strftime('%d/%m/%Y') }}
+
+                    <br>
+
+                    R$ {{ "%.2f"|format(conta[1]) }}
+
+                </div>
+
+            {% endfor %}
+
+        {% else %}
+
+            Nenhum compromisso pendente.
+
+        {% endif %}
+
+    </div>
+
+</section>
+<section class="dashboard-metrics">
+
+    <div class="metric-card">
+
+        <div class="metric-title">
+            🚨 Pendências Vencidas
+        </div>
+
+        {% if contas_vencidas %}
+
+            {% for conta in contas_vencidas %}
+
+                <div class="pendencia-item">
+
+                    <strong>
+                        {{ conta[0] }}
+                    </strong>
+
+                    <br>
+
+                    Venceu em:
+                    {{ conta[2].strftime('%d/%m/%Y') }}
+
+                    <br>
+
+                    R$ {{ "%.2f"|format(conta[1]) }}
+
+                </div>
+
+            {% endfor %}
+
+        {% else %}
+
+            Nenhuma pendência vencida ✅
+
+        {% endif %}
 
     </div>
 
 </section>
 
-    <div class="container">
+<section class="dashboard-metrics">    
 
-<h2>💰 Situação Financeira</h2>
+    <div class="metric-card">
 
-</div>
-<section class="benefits">
-<a href=" {{ url_for('receitas') }}" i class="card dashboard-card">
+        <div class="metric-title">Contas em Aberto</div>
 
-        <i class="btn btn-navpri fa-solid fa-money-bill-wave"></i>
-<br>
-        <h3>Receitas</h3>
+        <div class="metric-value">{{ qtd_pendentes }} conta(s)</div>
+
+        <div class="metric-value">R$ {{ valor_pendentes }}</div>
+
+    </div>
+
+    <div class="metric-card">
+
+        <div class="metric-title">Atrasadas</div>
+
+        <div class="metric-value">{{ qtd_atrasadas }} conta(s)</div>
+
+        <div class="metric-value">R$ {{ valor_atrasadas }}</div>
+    
+    </div>
+
+    <div class="metric-card">
+        <div class="metric-title"> Saldo Projetado </div>
+
+        <div class="metric-value"> R$ {{ "%.2f"|format(saldo_projetado) }} </div>
+    
+    </div>
+
+</section>
  
-        <p>R$ {{ total_receitas }}</p>
-    </a>
+        <h3>🎯 Planejamento Financeiro</h3>
+<section class="dashboard-metrics">
 
-     <a href="{{ url_for('despesas') }}"  i class="card dashboard-card">
+    <div class="metric-card">
 
-        <i class="btn btn-navpri fa-solid fa-credit-card"></i>
-<br>
-        <h3>Despesas</h3>
+        <div class="metric-title">
+            🎯 Metas Ativas
+        </div>
 
-        <p>R$ {{ total_despesas }}</p>
-
-    </a>
-
-    <div class="card dashboard-card">
-
-        <i class=" btn btn-navpri fa-solid fa-wallet"></i>
-<br>
-        <h3>Saldo</h3>
-
-        <p>R$ {{ saldo }}</p>
-
-    </div>
-    
-    
-    <div class="card dashboard-card">
-
-        <i class="btn btn-navpri fa-solid fa-heart-pulse"></i>
-<br>
-        <h3>Saúde Financeira</h3>
-
-        <p>
-            {% if saude_financeira == "Boa" %}
-
-            ✅ Boa
-
-            {% elif saude_financeira == "Atenção" %}
-
-            ⚠️ Atenção
-
-            {% else %}
-
-            🚨 Risco
-
-            {% endif %}
-
-        </p>
-
-        <p>{{ percentual_gasto }}% da renda comprometida.</p>
-
-    </div>
-     
-</section>
-    
-    <div class="container">
-
-        <h2>⚠️ Compromissos Financeiros</h2>
+        <div class="goal-value">
+            {{ total_metas }}
+        </div>
 
     </div>
 
-<section class="benefits">    
+    <div class="metric-card">
 
-    <div class="card dashboard-card">
+        <div class="metric-title">
+            🏆 Metas Concluídas
+        </div>
 
-        <i class="btn btn-navpri fa-solid fa-clock"></i>
-<br>
-        <h3>Contas em Aberto</h3>
+        <div class="goal-value">
+            {{ metas_concluidas }}
+        </div>
 
-        <p>{{ qtd_pendentes }} conta(s)</p>
-
-        <p>R$ {{ valor_pendentes }}</p>
-
-    </div>
-
-    <div class="card dashboard-card">
-
-        <i class="btn btn-negativo fa-solid fa-triangle-exclamation"></i>
-<br>
-        <h3>Atrasadas</h3>
-
-        <p>{{ qtd_atrasadas }} conta(s)</p>
-        <p>R$ {{ valor_atrasadas }}</p>
-    
-    </div>
-
-</section>
-    
-    <div class="container">
-
-        <h2>🎯 Planejamento Financeiro</h2>
+        <div class="goal-text">
+            {{ taxa_conclusao }}% concluídas
+        </div>
 
     </div>
 
-<section class="benefits">
+    <div class="metric-card">
 
-    <a href="{{ url_for('metas') }}"  i class="card dashboard-card">
+        <div class="metric-title">
+            💰 Valor Guardado
+        </div>
 
-        <i class="btn btn-navpri fa-solid fa-bullseye"></i>
-<br>
-        <h3>Metas</h3>
-
-        <p>{{ total_metas }} Meta (s) ativa (s) </p>
-
-    </a>
-
-    <div class="card dashboard-card">
-
-        <i class="btn btn-navpri fa-solid fa-piggy-bank"></i>
-<br>
-
-        <h3>Valor Guardado</h3>
-
-        <p>R$ {{ valor_guardado }}</p>
-
-        <p>Total acumulado nas metas financeiras.</p>
+        <div class="goal-value">
+            R$ {{ "%.2f"|format(valor_guardado) }}
+        </div>
 
     </div>
 
 </section>
+<section class="dashboard-metrics">
 
+    
+<div class="metric-card">
+    
+{% if metas_dashboard %}
+
+<div class="danger-card ">
+
+    {% for meta in metas_dashboard %}
+
+        <div class="alerta-item prioridade-financeira">
+
+            
+
+            <strong>
+                {{ meta.titulo }}
+            </strong>
+
+            <br>
+
+            {% if meta.atrasada %}
+
+    <div class="alerta-prazo">
+        ⚠️ Meta em atraso
+    </div>
+
+{% elif meta.concluida %}
+
+    <div class="meta-concluida-texto">
+        ✅ Meta concluída
+    </div>
+
+{% else %}
+
+    <div class="meta-em-andamento-texto">
+        🎯 Meta em andamento
+    </div>
+
+{% endif %}
+
+            <br>
+
+            📅 Prazo:
+            {{ meta.data_limite.strftime('%d/%m/%Y') }}
+
+            <br>
+
+            💰 Acumulado:
+            R$ {{ "%.2f"|format(meta.valor_atual) }}
+
+            <br>
+
+            🎯 Objetivo:
+            R$ {{ "%.2f"|format(meta.valor_meta) }}
+
+            <br><br>
+
+            <div class="meta-progress">
+
+                <div
+                    class="meta-progress-fill
+                    {% if meta.percentual >= 100 %}
+                        meta-concluida
+                    {% elif meta.percentual >= 75 %}
+                        progresso-alto
+                    {% elif meta.percentual >= 25 %}
+                        progresso-medio
+                    {% else %}
+                        progresso-baixo
+                    {% endif %}"
+                    data-width="{{ meta.percentual }}"
+                    style="width: {{ meta.percentual }}%;">
+                </div>
+
+            </div>
+
+            <div class="meta-progress-text">
+
+                {{ meta.percentual }}%
+
+                <br>
+
+                R$ {{ "%.2f"|format(meta.valor_atual) }}
+                de
+                R$ {{ "%.2f"|format(meta.valor_meta) }}
+
+            </div>
+
+        </div>
+
+    {% endfor %}
+
+</div>
+
+{% endif %}
+
+    </div>
+
+    
+
+</div>
+
+</section>
+</div>
+</div>
 {% endblock %}

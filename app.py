@@ -1,4 +1,8 @@
+from datetime import date
+from typing import Any
+
 from flask import Flask, render_template, request, redirect, url_for, flash, session
+from werkzeug import Response
 from database import conectar
 
 app = Flask(
@@ -78,7 +82,7 @@ def usuarios():
 
 # ------------------ Rota para Alterar Status de Administrador ------------------ #
 @app.route("/toggle_admin/<int:id>")
-def toggle_admin(id):
+def toggle_admin(id: int):
 
     if "usuario_id" not in session:
 
@@ -153,7 +157,8 @@ def toggle_admin(id):
                 """
             )
 
-            total_admins = cursor.fetchone()[0]
+            resultado_total_admins = cursor.fetchone()
+            total_admins = int(resultado_total_admins[0]) if resultado_total_admins is not None else 0
 
             if total_admins == 1:
 
@@ -212,7 +217,7 @@ def toggle_admin(id):
 
 # ------------------ Rota para Excluir Usuário ------------------ #
 @app.route("/excluir_usuario/<int:id>")
-def excluir_usuario(id):
+def excluir_usuario(id: int):
 
     if "usuario_id" not in session:
 
@@ -277,7 +282,7 @@ def excluir_usuario(id):
                 url_for("usuarios")
             )
 
-        if usuario[0]:  
+        if usuario[0]:
             cursor.execute(
                 """
                 SELECT COUNT(*)
@@ -286,7 +291,8 @@ def excluir_usuario(id):
                 """
             )
 
-            total_admins = cursor.fetchone()[0]
+            total_admins_result = cursor.fetchone()
+            total_admins = int(total_admins_result[0]) if total_admins_result is not None else 0
 
             if total_admins == 1:
 
@@ -339,7 +345,7 @@ def excluir_usuario(id):
 
 # ------------------ Rota para Alternar Status do Usuário ------------------ #
 @app.route("/toggle_usuario/<int:id>")
-def toggle_usuario(id):
+def toggle_usuario(id: int):
 
     if "usuario_id" not in session:
 
@@ -647,7 +653,7 @@ def esqueci_senha():
     "/redefinir-senha/<int:id>",
     methods=["GET", "POST"]
 )
-def redefinir_senha(id):
+def redefinir_senha(id: int):
 
     try:
 
@@ -759,9 +765,10 @@ def redefinir_senha(id):
         return redirect(
             url_for("esqueci_senha")
         )
+
 # ------------------ Rota Dashboard ------------------ #
 @app.route("/dashboard")
-def dashboard():
+def dashboard() -> str | Response:
 
     if "usuario_id" not in session:
 
@@ -793,6 +800,12 @@ def dashboard():
         # TOTAL DE RECEITAS
         # ==========================
 
+        def _fetch_scalar(default: int = 0) -> int | Any:
+            row = cursor.fetchone()
+            if row is None or row[0] is None:
+                return default
+            return row[0]
+
         cursor.execute(
             """
             SELECT COALESCE(SUM(valor), 0)
@@ -805,7 +818,7 @@ def dashboard():
         )
 
         total_receitas = float(
-            cursor.fetchone()[0]
+            _fetch_scalar()
         )
 
         # ==========================
@@ -817,6 +830,7 @@ def dashboard():
             SELECT COALESCE(SUM(valor), 0)
             FROM despesas
             WHERE usuario_id = %s
+            AND status = 'Paga'
             """,
             (
                 session["usuario_id"],
@@ -824,7 +838,7 @@ def dashboard():
         )
 
         total_despesas = float(
-            cursor.fetchone()[0]
+            _fetch_scalar()
         )
 
         # ==========================
@@ -843,13 +857,79 @@ def dashboard():
             )
         )
 
-        total_metas = cursor.fetchone()[0]
+        total_metas = _fetch_scalar()
+
+        cursor.execute(
+            """
+            SELECT
+                titulo,
+                valor_meta,
+                valor_atual,
+                data_limite,
+                status
+            FROM metas
+            WHERE usuario_id = %s
+            AND status <> 'Cancelada'
+            ORDER BY id DESC
+            """,
+            (
+                session["usuario_id"],
+            )
+        )
+
+        metas_dashboard = cursor.fetchall()
+
+        hoje = date.today()
+
+        metas_dashboard_processadas: list[dict[str, object]] = []
+
+        for meta in metas_dashboard:
+
+            titulo = meta[0]
+            valor_meta = float(meta[1])
+            valor_atual = float(meta[2])
+            data_limite = meta[3]
+            status = meta[4]
+
+            percentual = 0
+
+            if valor_meta > 0:
+                percentual = round(
+                    (valor_atual / valor_meta) * 100,
+                    0
+                )
+
+            atrasada = (
+                data_limite is not None
+                and data_limite < hoje
+                and valor_atual < valor_meta
+            )
+
+            concluida = (
+                valor_atual >= valor_meta
+            )
+
+            metas_dashboard_processadas.append(
+                {
+                    "titulo": titulo,
+                    "valor_meta": valor_meta,
+                    "valor_atual": valor_atual,
+                    "data_limite": data_limite,
+                    "percentual": percentual,
+                    "atrasada": atrasada,
+                    "concluida": concluida,
+                    "status": status
+                }
+            )
+
+        metas_dashboard = metas_dashboard_processadas
 
         # ==========================
         # SALDO
         # ==========================
 
         saldo = total_receitas - total_despesas
+       
 
         # ==========================
         # SAÚDE FINANCEIRA
@@ -898,6 +978,24 @@ def dashboard():
         # ==========================
         # CONTAS EM ABERTO
         # ==========================
+        cursor.execute(
+            """
+            SELECT
+                descricao,
+                valor,
+                data_vencimento
+            FROM despesas
+            WHERE usuario_id = %s
+            AND status = 'Pendente'
+            ORDER BY data_vencimento
+            LIMIT 1
+            """,
+            (
+                session["usuario_id"],
+            )
+        )
+
+        proximo_vencimento = cursor.fetchone()
 
         cursor.execute(
             """
@@ -919,11 +1017,19 @@ def dashboard():
 
         resultado = cursor.fetchone()
 
-        qtd_pendentes = resultado[0]
+        if resultado is None:
+            qtd_pendentes = 0
+            valor_pendentes = 0.0
+        else:
+            qtd_pendentes = resultado[0]
+            valor_pendentes = float(
+                resultado[1]
+                if resultado[1] is not None
+                else 0
+            )
 
-        valor_pendentes = float(
-            resultado[1]
-        )
+
+        saldo_projetado = saldo - valor_pendentes
 
         # ==========================
         # CONTAS ATRASADAS
@@ -936,7 +1042,7 @@ def dashboard():
                 COALESCE(SUM(valor), 0)
             FROM despesas
             WHERE usuario_id = %s
-            AND status = 'Atrasada'
+            AND status <> 'Paga'AND data_vencimento < CURRENT_DATE
             """,
             (
                 session["usuario_id"],
@@ -945,11 +1051,127 @@ def dashboard():
 
         resultado = cursor.fetchone()
 
-        qtd_atrasadas = resultado[0]
+        if resultado is None:
+            qtd_atrasadas = 0
+            valor_atrasadas = 0.0
+        else:
+            qtd_atrasadas = resultado[0]
+            valor_atrasadas = float(
+                resultado[1]
+                if resultado[1] is not None
+                else 0
+            )
 
-        valor_atrasadas = float(
-            resultado[1]
+        cursor.execute(
+            """
+            SELECT
+                descricao,
+                valor,
+                data_vencimento
+            FROM despesas
+            WHERE usuario_id = %s
+            AND status = 'Pendente'
+            ORDER BY data_vencimento
+            LIMIT 5
+            """,
+            (
+                session["usuario_id"],
+            )
         )
+
+        proximos_compromissos = cursor.fetchall()
+
+        cursor.execute(
+            """
+            SELECT
+                descricao,
+                valor,
+                data_vencimento
+            FROM despesas
+            WHERE usuario_id = %s
+            AND status <> 'Paga'
+            AND data_vencimento < CURRENT_DATE
+            ORDER BY data_vencimento
+            LIMIT 5
+            """,
+            (
+                session["usuario_id"],
+            )
+        )
+
+        contas_vencidas = cursor.fetchall()
+
+        # ==========================
+        # ALERTAS DE VENCIMENTO
+        # ==========================
+
+        cursor.execute(
+            """
+            SELECT
+             descricao,
+             valor,
+             data_vencimento
+            FROM despesas
+            WHERE usuario_id = %s
+            AND status <> 'Paga'
+            AND data_vencimento BETWEEN CURRENT_DATE
+                                AND CURRENT_DATE + INTERVAL '3 days'
+            ORDER BY data_vencimento
+            """,
+            (
+                session["usuario_id"],
+            )
+        )
+
+        alertas_vencimento = cursor.fetchall()
+
+        # ==========================
+        # PRIORIDADE FINANCEIRA 
+        # ==========================
+
+        if contas_vencidas:
+
+            prioridade_tipo = "vencida"
+            prioridade = contas_vencidas[0]
+
+        elif alertas_vencimento:
+
+            prioridade_tipo = "vencimento"
+            prioridade = alertas_vencimento[0]
+
+        else:
+
+            prioridade_tipo = "ok"
+            prioridade = None
+
+        alertas_processados = []
+
+        hoje = date.today()
+
+        for conta in alertas_vencimento:
+
+            descricao = conta[0]
+            valor = conta[1]
+            vencimento = conta[2]
+
+            dias = (vencimento - hoje).days
+
+            if dias == 0:
+                mensagem = "Vence hoje"
+            elif dias == 1:
+                mensagem = "Vence amanhã"
+            else:
+                mensagem = f"Vence em {dias} dias"
+
+            alertas_processados.append( # pyright: ignore[reportUnknownMemberType]
+                (
+                    descricao,
+                    valor,
+                    mensagem
+                )
+            )
+
+        alertas_vencimento = alertas_processados
 
         # ==========================
         # VALOR GUARDADO EM METAS
@@ -968,9 +1190,60 @@ def dashboard():
             )
         )
 
+        valor_guardado_result = cursor.fetchone()
         valor_guardado = float(
-            cursor.fetchone()[0]
+            valor_guardado_result[0]
+            if valor_guardado_result is not None and valor_guardado_result[0] is not None
+            else 0
         )
+
+        # ==========================
+        # METAS EM ATRASO
+        # ==========================
+
+        cursor.execute(
+            """
+            SELECT
+                titulo,
+                valor_meta,
+                valor_atual,
+                data_limite
+            FROM metas
+            WHERE usuario_id = %s
+            AND status <> 'Cancelada'
+            AND status <> 'Concluida'
+            AND valor_atual < valor_meta
+            AND data_limite < CURRENT_DATE
+            """,
+            (
+                session["usuario_id"],
+            )
+        )
+
+        metas_atrasadas = cursor.fetchall()
+        qtd_metas_atrasadas = len(metas_atrasadas)
+
+        cursor.execute(
+            """
+            SELECT COUNT(*)
+                FROM metas
+                WHERE usuario_id = %s
+                AND status = 'Concluida'
+                """,
+            (
+                session["usuario_id"],
+            )
+        )
+
+        metas_concluidas = int(_fetch_scalar())
+
+        if total_metas > 0:
+            taxa_conclusao = round(
+                (metas_concluidas / total_metas) * 100,
+                0
+            )
+        else:
+            taxa_conclusao = 0
 
         # ==========================
         # RECOMENDAÇÃO AUTOMÁTICA
@@ -982,6 +1255,13 @@ def dashboard():
                 "Regularize suas contas atrasadas "
                 "para evitar juros e multas."
             )
+
+        elif qtd_metas_atrasadas > 0:
+
+            recomendacao = (
+            "Você possui metas com prazo vencido. "
+            "Considere revisar o prazo ou aumentar seus aportes."
+        )    
 
         elif percentual_gasto > 80:
 
@@ -1015,8 +1295,18 @@ def dashboard():
             total_receitas=total_receitas,
             total_despesas=total_despesas,
             saldo=saldo,
+            saldo_projetado=saldo_projetado,
+            contas_vencidas=contas_vencidas,
+            proximos_compromissos=proximos_compromissos,
+            proximo_vencimento=proximo_vencimento,
+            alertas_vencimento=alertas_vencimento,
 
+            prioridade_tipo=prioridade_tipo,
+            prioridade=prioridade,
             total_metas=total_metas,
+            metas_dashboard=metas_dashboard,
+
+            qtd_metas_atrasadas=qtd_metas_atrasadas,
 
             saude_financeira=saude_financeira,
             percentual_gasto=round(
@@ -1036,6 +1326,9 @@ def dashboard():
             valor_atrasadas=valor_atrasadas,
 
             valor_guardado=valor_guardado,
+            metas_atrasadas=metas_atrasadas,
+            metas_concluidas=metas_concluidas,
+            taxa_conclusao=taxa_conclusao,
 
             recomendacao=recomendacao
         )
@@ -1187,7 +1480,7 @@ def receitas():
 
 # ------------------ Rota para a Página de Editar Receitas ------------------ #  
 @app.route("/editar_receita/<int:id>", methods=["GET", "POST"])
-def editar_receita(id):
+def editar_receita(id: int):
 
     if "usuario_id" not in session:
 
@@ -1213,6 +1506,7 @@ def editar_receita(id):
             data_recebimento = request.form.get("data_recebimento")
             recorrente = request.form.get("recorrente") == "on"
             observacao = request.form.get("observacao")
+            receita_id: int = int(id)
 
             cursor.execute(
                 """
@@ -1233,7 +1527,7 @@ def editar_receita(id):
                     data_recebimento,
                     recorrente,
                     observacao,
-                    id
+                    receita_id,
                 )
             )
 
@@ -1251,6 +1545,9 @@ def editar_receita(id):
                 url_for("receitas")
             )
 
+        receita_id: int = int(id)
+        usuario_id: int = int(session["usuario_id"])
+
         cursor.execute(
             """
             SELECT
@@ -1266,8 +1563,8 @@ def editar_receita(id):
             AND usuario_id = %s
             """,
             (
-                id,
-                session["usuario_id"]
+                receita_id,
+                usuario_id,
             )
         )
 
@@ -1307,7 +1604,7 @@ def editar_receita(id):
 
 # ------------------ Rota para Excluir Receita ------------------ #
 @app.route("/excluir_receita/<int:id>")
-def excluir_receita(id):
+def excluir_receita(id: int):
 
     if "usuario_id" not in session:
 
@@ -1322,6 +1619,9 @@ def excluir_receita(id):
 
     try:
 
+        usuario_id = int(session["usuario_id"])
+        receita_id = int(id)
+
         con = conectar()
         cursor = con.cursor()
 
@@ -1335,8 +1635,8 @@ def excluir_receita(id):
             AND usuario_id = %s
             """,
             (
-                id,
-                session["usuario_id"]
+                receita_id,
+                usuario_id,
             )
         )
 
@@ -1363,7 +1663,7 @@ def excluir_receita(id):
             DELETE FROM receitas
             WHERE id = %s
             """,
-            (id,)
+            (receita_id,)
         )
 
         con.commit()
@@ -1422,6 +1722,27 @@ def despesas():
         data_pagamento = request.form.get("data_pagamento")
         status = request.form.get("status")
         observacao = request.form.get("observacao")
+
+        if status != "Paga" and data_pagamento:
+
+            flash(
+                "Para informar uma despesa com data de pagamento realizada, altere o status para 'Paga'.",
+                "erro"
+            )
+
+            data_pagamento = None
+            return redirect(url_for("despesas"))
+
+        if status == "Paga" and not data_pagamento:
+
+            flash(
+                "Informe a data de pagamento para despesas pagas.",
+                "erro"
+            )
+
+            return redirect(
+                url_for("despesas")
+            )
 
         try:
 
@@ -1541,7 +1862,7 @@ def despesas():
 # ------------------ Rota para editar Despesas ------------------ #
 
 @app.route("/editar_despesa/<int:id>", methods=["GET", "POST"])
-def editar_despesa(id):
+def editar_despesa(id: int) -> Response | str:
 
     if "usuario_id" not in session:
 
@@ -1570,6 +1891,28 @@ def editar_despesa(id):
             status = request.form.get("status")
             observacao = request.form.get("observacao")
 
+            if status != "Paga" and data_pagamento:
+
+                flash(
+                    "Para informar uma data de pagamento, altere o status para 'Paga'.",
+                    "erro"
+                )
+                data_pagamento = None
+
+            if status == "Paga" and not data_pagamento:
+
+                flash(
+                    "Informe a data de pagamento para despesas pagas.",
+                    "erro"
+                )
+
+                cursor.close()
+                con.close()
+
+                return redirect(
+                    url_for("editar_despesa", id=id)
+                )
+
             cursor.execute(
                 """
                 UPDATE despesas
@@ -1583,8 +1926,7 @@ def editar_despesa(id):
                     status = %s,
                     observacao = %s
                 WHERE id = %s
-                """
-                ,
+                """,
                 (
                     descricao,
                     categoria,
@@ -1671,7 +2013,7 @@ def editar_despesa(id):
 # ------------------ Rota para excluir despesas ------------------ #
 
 @app.route("/excluir_despesa/<int:id>")
-def excluir_despesa(id):
+def excluir_despesa(id: int):
 
     if "usuario_id" not in session:
 
@@ -1896,7 +2238,7 @@ def metas():
 
 # ------------------ Rota para Editar Metas ------------------ #
 @app.route("/editar_meta/<int:id>", methods=["GET", "POST"])
-def editar_meta(id):
+def editar_meta(id: int):
 
     if "usuario_id" not in session:
 
@@ -2027,7 +2369,7 @@ def editar_meta(id):
         )
 # ------------------ Rota para Excluir Meta ------------------ #
 @app.route("/excluir_meta/<int:id>")
-def excluir_meta(id):
+def excluir_meta(id: int):
 
     if "usuario_id" not in session:
 
@@ -2112,6 +2454,25 @@ def excluir_meta(id):
         return redirect(
             url_for("metas")
         )
+
+# ==========================
+# CONCLUSÃO AUTOMÁTICA DE METAS
+# ==========================
+
+        cursor.execute(
+            """
+            UPDATE metas
+            SET status = 'Concluida'
+            WHERE usuario_id = %s
+            AND valor_atual >= valor_meta
+            AND status <> 'Concluida'
+            """,
+            (
+                session["usuario_id"],
+            )
+        )
+
+        con.commit()
 
 # ------------------ Conexão com o Banco de Dados ------------------ #
 try:
