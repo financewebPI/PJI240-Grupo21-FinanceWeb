@@ -1363,6 +1363,73 @@ Dashboard Financeiro concluído com sucesso, contemplando indicadores financeiro
 
 visualizações gráficas, consolidando o principal centro de monitoramento da aplicação FinanceWeb.
 
+## Data: 13/10/2026
+
+### Atividade 38 - Publicação da Aplicação em Ambiente de Produção (Render)
+
+#### Objetivo
+
+Disponibilizar o sistema FinanceWeb em ambiente de nuvem, permitindo acesso externo à aplicação sem a necessidade de execução local.
+
+#### Descrição
+
+Foi realizada a implantação da aplicação FinanceWeb na plataforma Render, permitindo que o sistema passasse a operar em ambiente de produção acessível pela internet.
+
+Inicialmente foi criada a infraestrutura de banco de dados PostgreSQL utilizando os recursos da própria plataforma Render. Durante a configuração foram definidos:
+
+- Banco de dados financeweb;
+- Usuário dedicado para aplicação;
+- Variáveis de ambiente para acesso seguro ao banco;
+- Integração entre aplicação Flask e PostgreSQL remoto.
+
+Para possibilitar a execução da aplicação em ambiente Linux, foi realizada a revisão das dependências do projeto, removendo bibliotecas desnecessárias oriundas do ambiente de desenvolvimento local e mantendo apenas os pacotes efetivamente utilizados pelo FinanceWeb.
+
+Também foi configurado o processo de deploy automatizado através do GitHub, utilizando:
+
+- Build Command;
+- Start Command;
+- Gunicorn como servidor de aplicação;
+- Integração contínua entre Render e repositório do projeto.
+
+Durante os testes foram identificados problemas relacionados à inexistência das tabelas no banco PostgreSQL remoto. Após diagnóstico da estrutura do banco, foram recriadas as tabelas da aplicação diretamente no ambiente Render:
+
+- usuarios;
+- receitas;
+- despesas;
+- metas.
+
+Com a estrutura do banco criada, foram realizados testes completos de funcionamento contemplando:
+
+- Cadastro de usuários;
+- Autenticação;
+- Acesso ao Dashboard;
+- Acesso ao Painel Administrativo;
+- Persistência de dados;
+- Integração entre Flask e PostgreSQL remoto.
+
+Após validação do funcionamento da aplicação, foi promovido um usuário administrador para permitir acesso às funcionalidades administrativas do sistema.
+
+#### Resultado
+
+Aplicação FinanceWeb publicada com sucesso em ambiente de produção através da plataforma Render, com banco PostgreSQL remoto integrado, autenticação funcional, cadastro de usuários operacional, dashboard financeiro disponível e sistema acessível pela internet para testes dos integrantes do projeto.
+
+#### Observações
+
+A aplicação passou a operar em um ambiente externo ao computador de desenvolvimento, permitindo testes reais por diferentes usuários e dispositivos.
+
+A etapa de deploy também validou a arquitetura completa da solução, incluindo:
+
+- Frontend;
+- Backend Flask;
+- Banco PostgreSQL;
+- Controle de sessão;
+- Persistência de dados;
+- Integração contínua via GitHub.
+
+#### Resultado Final
+
+Sistema FinanceWeb disponível online e preparado para testes colaborativos, validações do Projeto Integrador e futuras evoluções da plataforma.
+
 ## Situação Atual do Projeto
 
 ### Concluído
@@ -1421,12 +1488,18 @@ visualizações gráficas, consolidando o principal centro de monitoramento da a
 ✅ Redefinição de Senhas
 ✅ Validação de Credenciais
 ✅ Estruturar Dashboard Financeiro
+✅ Realizar Deploy no Render
 
 ### Próximas Atividades
 
-🔄 Integrar AwesomeAPI
-🔄 Realizar Deploy no Render
+🔄 Implementar Inteligência Financeira
+🔄 Realizar Testes Colaborativos 
+🔄 Refinar Experiência do Usuário
 
 # Considerações Finais
 
-As próximas atividades serão direcionadas à implementação do banco de dados PostgreSQL, integração entre backend e persistência de dados, desenvolvimento do Dashboard Financeiro, integração com APIs externas e publicação da aplicação em ambiente de nuvem através da plataforma Render.
+Com a conclusão da estruturação do Dashboard Financeiro e a publicação do FinanceWeb em ambiente de produção através da plataforma Render, o projeto passou a contar com funcionalidades completas de autenticação, gestão financeira e acompanhamento de indicadores financeiros.
+
+As próximas atividades serão direcionadas ao aprimoramento da inteligência financeira do sistema, incluindo geração automática de insights, recomendações personalizadas, análises financeiras baseadas no comportamento do usuário, refinamento dos gráficos analíticos e expansão dos mecanismos de apoio à tomada de decisão financeira.
+
+Também serão realizados testes colaborativos com usuários externos, validações de usabilidade, correções identificadas durante o uso em ambiente de produção e ajustes finais para consolidação da versão apresentada no Projeto Integrador.

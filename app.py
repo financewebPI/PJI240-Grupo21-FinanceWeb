@@ -789,6 +789,26 @@ def dashboard() -> str | Response:
         cursor = con.cursor()
 
         # ==========================
+        # CONCLUSÃO AUTOMÁTICA DE METAS
+        # ==========================
+
+        cursor.execute(
+            """
+            UPDATE metas
+            SET status = 'Concluida'
+            WHERE usuario_id = %s
+            AND valor_atual >= valor_meta
+            AND status <> 'Concluida'
+            """,
+            (
+                session["usuario_id"],
+            )
+        )
+
+        con.commit()
+
+
+        # ==========================
         # MÊS DE REFERÊNCIA
         # ==========================
 
@@ -2629,25 +2649,6 @@ def excluir_meta(id: int):
         return redirect(
             url_for("metas")
         )
-
-# ==========================
-# CONCLUSÃO AUTOMÁTICA DE METAS
-# ==========================
-
-        cursor.execute(
-            """
-            UPDATE metas
-            SET status = 'Concluida'
-            WHERE usuario_id = %s
-            AND valor_atual >= valor_meta
-            AND status <> 'Concluida'
-            """,
-            (
-                session["usuario_id"],
-            )
-        )
-
-        con.commit()
 
 # ------------------ Conexão com o Banco de Dados ------------------ #
 try:
