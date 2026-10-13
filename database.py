@@ -1,14 +1,15 @@
+import os
 import psycopg2
 
 
 def conectar():
 
     conexao = psycopg2.connect(
-        host="localhost",
-        database="financeweb",
-        user="postgres",
-        password="FinanceWeb2026",
-        port="5432"
+        host=os.getenv("DB_HOST"),
+        database=os.getenv("DB_NAME"),
+        user=os.getenv("DB_USER"),
+        password=os.getenv("DB_PASSWORD"),
+        port=os.getenv("DB_PORT")
     )
 
     return conexao
