@@ -789,6 +789,12 @@ def dashboard() -> str | Response:
         cursor = con.cursor()
 
         # ==========================
+        # MÊS DE REFERÊNCIA
+        # ==========================
+
+        mes_referencia = datetime.now()
+
+        # ==========================
         # PERÍODO ANALISADO
         # ==========================
 
@@ -822,6 +828,28 @@ def dashboard() -> str | Response:
         )
 
         # ==========================
+        # RECEITAS DO MÊS
+        # ==========================
+
+        cursor.execute(
+            """
+            SELECT COALESCE(SUM(valor), 0)
+            FROM receitas
+            WHERE usuario_id = %s
+            AND DATE_TRUNC('month', data_recebimento)
+                = DATE_TRUNC('month', %s::timestamp)
+            """,
+            (
+                session["usuario_id"],
+                mes_referencia
+            )
+        )
+
+        receitas_mes_atual = float(
+            _fetch_scalar()
+        )
+
+        # ==========================
         # TOTAL DE DESPESAS
         # ==========================
 
@@ -841,6 +869,37 @@ def dashboard() -> str | Response:
             _fetch_scalar()
         )
 
+        # ==========================
+        # DESPESAS DO MÊS
+        # ==========================
+
+        cursor.execute(
+            """
+            SELECT COALESCE(SUM(valor), 0)
+            FROM despesas
+            WHERE usuario_id = %s
+            AND status = 'Paga'
+            AND DATE_TRUNC('month', data_lancamento)
+                = DATE_TRUNC('month', %s::timestamp)
+            """,
+            (
+                session["usuario_id"],
+                mes_referencia
+            )
+        )
+
+        despesas_mes_atual = float(
+            _fetch_scalar()
+        )
+
+        # ==========================
+        # RESULTADO DO MÊS
+        # ==========================
+
+        resultado_mes_atual = (
+            receitas_mes_atual
+            - despesas_mes_atual
+        )
         # ==========================
         # TOTAL DE METAS
         # ==========================
@@ -925,8 +984,89 @@ def dashboard() -> str | Response:
         metas_dashboard = metas_dashboard_processadas
 
         # ==========================
+        # EVOLUÇÃO FINANCEIRA
+        # ÚLTIMOS 6 MESES
+        # ==========================
+
+        cursor.execute(
+            """
+            SELECT
+                TO_CHAR(data_recebimento, 'MM/YYYY') AS mes,
+                COALESCE(SUM(valor), 0)
+            FROM receitas
+            WHERE usuario_id = %s
+            GROUP BY mes
+            ORDER BY MIN(data_recebimento)
+            """
+            ,
+            (
+                session["usuario_id"],
+            )
+        )
+
+        receitas_mes = cursor.fetchall()
+
+        cursor.execute(
+            """
+            SELECT
+                TO_CHAR(data_lancamento, 'MM/YYYY') AS mes,
+                 COALESCE(SUM(valor), 0)
+                FROM despesas
+                WHERE usuario_id = %s
+                AND status = 'Paga'
+                GROUP BY mes
+                ORDER BY MIN(data_lancamento)
+            """
+            ,
+            (
+                session["usuario_id"],
+            )
+        )
+
+        despesas_mes = cursor.fetchall()
+
+        meses: list[str] = []
+        receitas_mensais: list[float] = []
+        despesas_mensais: list[float] = []
+
+        for linha in receitas_mes:
+
+            meses.append(str(linha[0]))
+            receitas_mensais.append(float(linha[1]))
+
+        for indice in range(len(meses)):
+
+            valor_despesa = 0.0
+
+            for despesa in despesas_mes:
+
+                if despesa[0] == meses[indice]:
+                    valor_despesa = float(despesa[1])
+                    break
+
+            despesas_mensais.append(valor_despesa)
+
+
+        # ==========================
         # SALDO
         # ==========================
+
+        saldos_mensais: list[float] = []
+
+        saldo_acumulado = 0.0
+
+        for indice in range(len(meses)):
+
+            saldo_mes = (
+                receitas_mensais[indice]
+                - despesas_mensais[indice]
+            )
+
+            saldo_acumulado += saldo_mes
+
+            saldos_mensais.append(
+                saldo_acumulado
+            )
 
         saldo = total_receitas - total_despesas
        
@@ -1288,50 +1428,85 @@ def dashboard() -> str | Response:
         con.close()
 
         return render_template(
-            "dashboard.html",
+    "dashboard.html",
 
-            periodo_analisado=periodo_analisado,
+    # ==========================
+    # PERÍODO
+    # ==========================
+    periodo_analisado=periodo_analisado,
 
-            total_receitas=total_receitas,
-            total_despesas=total_despesas,
-            saldo=saldo,
-            saldo_projetado=saldo_projetado,
-            contas_vencidas=contas_vencidas,
-            proximos_compromissos=proximos_compromissos,
-            proximo_vencimento=proximo_vencimento,
-            alertas_vencimento=alertas_vencimento,
+    # ==========================
+    # VISÃO GERAL ACUMULADA
+    # ==========================
+    total_receitas=total_receitas,
+    total_despesas=total_despesas,
+    saldo=saldo,
+    saldo_projetado=saldo_projetado,
 
-            prioridade_tipo=prioridade_tipo,
-            prioridade=prioridade,
-            total_metas=total_metas,
-            metas_dashboard=metas_dashboard,
+    # ==========================
+    # MOVIMENTO DO MÊS
+    # ==========================
+    receitas_mes_atual=receitas_mes_atual,
+    despesas_mes_atual=despesas_mes_atual,
+    resultado_mes_atual=resultado_mes_atual,
 
-            qtd_metas_atrasadas=qtd_metas_atrasadas,
+    # ==========================
+    # EVOLUÇÃO FINANCEIRA
+    # ==========================
+    meses=meses,
+    receitas_mensais=receitas_mensais,
+    despesas_mensais=despesas_mensais,
+    saldos_mensais=saldos_mensais,
 
-            saude_financeira=saude_financeira,
-            percentual_gasto=round(
-                percentual_gasto,
-                1
-            ),
+    # ==========================
+    # SAÚDE FINANCEIRA
+    # ==========================
+    saude_financeira=saude_financeira,
+    percentual_gasto=round(
+        percentual_gasto,
+        1
+    ),
+    taxa_economia=round(
+        taxa_economia,
+        1
+    ),
 
-            taxa_economia=round(
-                taxa_economia,
-                1
-            ),
+    # ==========================
+    # ALERTAS E PRIORIDADES
+    # ==========================
+    prioridade_tipo=prioridade_tipo,
+    prioridade=prioridade,
+    recomendacao=recomendacao,
 
-            qtd_pendentes=qtd_pendentes,
-            valor_pendentes=valor_pendentes,
+    alertas_vencimento=alertas_vencimento,
+    contas_vencidas=contas_vencidas,
+    proximos_compromissos=proximos_compromissos,
+    proximo_vencimento=proximo_vencimento,
 
-            qtd_atrasadas=qtd_atrasadas,
-            valor_atrasadas=valor_atrasadas,
+    # ==========================
+    # CONTAS E PENDÊNCIAS
+    # ==========================
+    qtd_pendentes=qtd_pendentes,
+    valor_pendentes=valor_pendentes,
 
-            valor_guardado=valor_guardado,
-            metas_atrasadas=metas_atrasadas,
-            metas_concluidas=metas_concluidas,
-            taxa_conclusao=taxa_conclusao,
+    qtd_atrasadas=qtd_atrasadas,
+    valor_atrasadas=valor_atrasadas,
 
-            recomendacao=recomendacao
-        )
+    # ==========================
+    # METAS
+    # ==========================
+    total_metas=total_metas,
+
+    metas_dashboard=metas_dashboard,
+    metas_atrasadas=metas_atrasadas,
+
+    qtd_metas_atrasadas=qtd_metas_atrasadas,
+
+    metas_concluidas=metas_concluidas,
+    taxa_conclusao=taxa_conclusao,
+
+    valor_guardado=valor_guardado,
+)
 
     except Exception as erro:
 

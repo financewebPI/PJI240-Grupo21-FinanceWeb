@@ -1218,7 +1218,7 @@ incluindo cálculo automático de progresso dos objetivos cadastrados.
 
 Implementar um mecanismo de recuperação de senha para usuários cadastrados no sistema FinanceWeb.
 
-####Descrição
+#### Descrição
 
 Foi desenvolvido o primeiro fluxo de recuperação de senha da aplicação utilizando integração entre Flask e PostgreSQL.
 
@@ -1269,6 +1269,99 @@ A solução foi desenvolvida seguindo os padrões visuais já utilizados nas tel
 Funcionalidade de recuperação de senha implementada com sucesso, permitindo localizar usuários cadastrados, redefinir credenciais de acesso e validar o novo processo de 
 
 autenticação através do sistema.
+
+## Data: 12/10/2026
+
+### Atividade 37 - Estruturação do Dashboard Financeiro
+
+#### Objetivo
+
+Desenvolver um painel financeiro inteligente para acompanhamento da situação financeira dos usuários do sistema FinanceWeb.
+
+#### Descrição
+
+Foi realizada a implementação completa do Dashboard Financeiro da aplicação, consolidando informações de receitas, despesas, metas financeiras e indicadores de desempenho em uma 
+única interface.
+
+Inicialmente foram desenvolvidos os indicadores financeiros principais da aplicação, permitindo a visualização de:
+
+Receitas acumuladas;
+
+Despesas acumuladas;
+
+Saldo financeiro acumulado;
+
+Saldo projetado;
+
+Saúde financeira.
+
+Também foram implementados cálculos automáticos para geração de indicadores de desempenho financeiro, incluindo:
+
+Percentual de comprometimento da renda;
+
+Taxa de economia;
+
+Classificação da saúde financeira em Boa, Atenção ou Risco.
+
+Durante a implementação foram criadas regras automáticas para identificação de despesas vencidas, eliminando a necessidade de alteração manual de status pelo usuário.
+
+O dashboard passou a identificar automaticamente:
+
+Contas pendentes;
+
+Contas atrasadas;
+
+Próximos vencimentos;
+
+Obrigações financeiras futuras.
+
+Posteriormente foram desenvolvidos mecanismos de recomendação automática, permitindo que o sistema apresente orientações financeiras ao usuário com base em sua situação financeira 
+
+atual.
+
+Também foi implementado um sistema de priorização financeira capaz de identificar automaticamente compromissos que exigem atenção imediata.
+
+Na área de planejamento financeiro foram adicionados indicadores para acompanhamento das metas cadastradas, incluindo:
+
+Quantidade de metas ativas;
+
+Quantidade de metas concluídas;
+
+Valor total acumulado em metas;
+
+Percentual de conclusão das metas;
+
+Identificação automática de metas em atraso;
+
+Identificação automática de metas concluídas.
+
+Foi desenvolvido um sistema visual de acompanhamento das metas utilizando barras de progresso calculadas automaticamente a partir dos valores cadastrados para cada objetivo 
+
+financeiro.
+
+Para ampliar a capacidade de análise do usuário, foi implementado um gráfico de evolução financeira utilizando Chart.js.
+
+O gráfico passou a apresentar:
+
+Receitas mensais;
+
+Despesas efetivamente pagas;
+
+Evolução do saldo acumulado ao longo dos meses.
+
+Também foi criada uma estrutura preparada para futura implementação de filtros por período, através da utilização de uma variável de referência mensal responsável pelo cálculo dos 
+
+indicadores financeiros do mês atualmente analisado.
+
+Durante o desenvolvimento foram realizados diversos ajustes de responsividade e organização visual, garantindo adequada visualização tanto em computadores quanto em dispositivos 
+
+móveis.
+
+#### Resultado
+
+Dashboard Financeiro concluído com sucesso, contemplando indicadores financeiros, metas, alertas automáticos, recomendações inteligentes, acompanhamento de desempenho financeiro e 
+
+visualizações gráficas, consolidando o principal centro de monitoramento da aplicação FinanceWeb.
 
 ## Situação Atual do Projeto
 
@@ -1327,10 +1420,10 @@ autenticação através do sistema.
 ✅ Recuperação de Senha
 ✅ Redefinição de Senhas
 ✅ Validação de Credenciais
+✅ Estruturar Dashboard Financeiro
 
 ### Próximas Atividades
 
-🔄 Estruturar Dashboard Financeiro
 🔄 Integrar AwesomeAPI
 🔄 Realizar Deploy no Render
 

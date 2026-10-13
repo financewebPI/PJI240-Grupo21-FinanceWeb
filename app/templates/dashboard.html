@@ -14,7 +14,7 @@
    
         <h3>📊 Visão Geral</h3>
 
-        
+</section>        
 
 <section class="dashboard-metrics">  
 
@@ -27,18 +27,43 @@
     </div>
 
     <div class="metric-card">
+
+        <div class="metric-title">
+            Receitas do Mês
+        </div>
+
+        <div class="metric-value metric-positive">
+            R$ {{ "%.2f"|format(receitas_mes_atual) }}
+        </div>
+
+    </div>
+
+    {#<div class="metric-card">
+
         <div class="metric-title"> Receitas </div>
 
         <div class="metric-value metric-positive"> R$ {{ "%.2f"|format(total_receitas) }} </div>
     
-    </div>
+    </div>#}
 
     <div class="metric-card">
+
+        <div class="metric-title">
+            Despesas do Mês
+        </div>
+
+        <div class="metric-value metric-negative">
+            R$ {{ "%.2f"|format(despesas_mes_atual) }}
+        </div>
+
+    </div>
+
+    {#<div class="metric-card">
         <div class="metric-title"> Despesas </div>
 
         <div class="metric-value metric-negative"> R$ {{ "%.2f"|format(total_despesas) }} </div>
     
-    </div>
+    </div>#}
 
     <div class="metric-card">
         <div class="metric-title"> Saldo Atual </div>
@@ -172,6 +197,49 @@
 
 
     </div> 
+
+</section>
+
+<h3> 📈 Evolução Financeira </h3>
+
+{#<section class="dashboard-metrics">    
+
+    <div class="metric-card">
+
+        <div class="metric-title">
+            Resultado do Mês
+        </div>
+
+        <div class="metric-value">
+
+            {% if resultado_mes_atual >= 0 %}
+                <span class="metric-positive">
+                    R$ {{ "%.2f"|format(resultado_mes_atual) }}
+                </span>
+            {% else %}
+                <span class="metric-negative">
+                    R$ {{ "%.2f"|format(resultado_mes_atual) }}
+                </span>
+            {% endif %}
+
+        </div>
+
+    </div>
+
+</section>#}
+
+    </h3>
+<section class="dashboard-metrics">
+
+    <div class="metric-card chart-card">
+
+        <div class="chart-container">
+
+            <canvas id="graficoEvolucao"></canvas>
+
+        </div>
+
+    </div>
 
 </section>
 
@@ -480,4 +548,51 @@
 </section>
 </div>
 </div>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+
+new Chart(
+    document.getElementById('graficoEvolucao'),
+    {
+        type: 'line',
+        data: {
+
+            labels: {{ meses | tojson }},
+
+            datasets: [
+
+                {
+                    label: 'Receitas',
+                    data: {{ receitas_mensais | tojson }},
+                    borderColor: '#22c55e',
+                    backgroundColor: '#22c55e'
+                },
+
+                {
+                    label: 'Despesas',
+                    data: {{ despesas_mensais | tojson }},
+                    borderColor: '#ef4444',
+                    backgroundColor: '#ef4444'
+                },
+
+                {
+                    label: 'Saldo',
+                    data: {{ saldos_mensais | tojson }},
+                    borderColor: '#1D4ED8',
+                    backgroundColor: '#1D4ED8',
+                    borderWidth: 3,
+                    tension: 0.3
+                }
+
+            ]
+        },
+
+        options: {
+            responsive: true,
+            maintainAspectRatio: false
+        }
+    }
+);
+
+</script>
 {% endblock %}
