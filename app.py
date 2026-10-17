@@ -1,5 +1,6 @@
-from datetime import date
+from datetime import date, datetime
 from typing import Any
+from dateutil.relativedelta import relativedelta
 
 from flask import Flask, render_template, request, redirect, url_for, flash, session
 from werkzeug import Response
@@ -783,8 +784,6 @@ def dashboard() -> str | Response:
 
     try:
 
-        from datetime import datetime
-
         con = conectar()
         cursor = con.cursor()
 
@@ -1045,26 +1044,50 @@ def dashboard() -> str | Response:
 
         despesas_mes = cursor.fetchall()
 
+        # ======================================
+        # GERAR OS ÚLTIMOS 6 MESES
+        # ======================================
+
         meses: list[str] = []
+
+        for i in range(5, -1, -1):
+
+            data = datetime.now() - relativedelta(months=i)
+
+            meses.append(
+                data.strftime("%m/%Y")
+            )
+
+        # ======================================
+        # CONVERTER RESULTADOS EM DICIONÁRIOS
+        # ======================================
+
+        receitas_dict = {
+            str(mes): float(valor)
+            for mes, valor in receitas_mes
+        }
+
+        despesas_dict = {
+            str(mes): float(valor)
+            for mes, valor in despesas_mes
+        }
+
+        # ======================================
+        # MONTAR SÉRIES DO GRÁFICO
+        # ======================================
+
         receitas_mensais: list[float] = []
         despesas_mensais: list[float] = []
 
-        for linha in receitas_mes:
+        for mes in meses:
 
-            meses.append(str(linha[0]))
-            receitas_mensais.append(float(linha[1]))
+            receitas_mensais.append(
+                receitas_dict.get(mes, 0)
+            )
 
-        for indice in range(len(meses)):
-
-            valor_despesa = 0.0
-
-            for despesa in despesas_mes:
-
-                if despesa[0] == meses[indice]:
-                    valor_despesa = float(despesa[1])
-                    break
-
-            despesas_mensais.append(valor_despesa)
+            despesas_mensais.append(
+                despesas_dict.get(mes, 0)
+            )
 
 
         # ==========================
@@ -1202,7 +1225,8 @@ def dashboard() -> str | Response:
                 COALESCE(SUM(valor), 0)
             FROM despesas
             WHERE usuario_id = %s
-            AND status <> 'Paga'AND data_vencimento < CURRENT_DATE
+            AND status <> 'Paga'
+            AND data_vencimento < CURRENT_DATE
             """,
             (
                 session["usuario_id"],
