@@ -161,80 +161,81 @@
 </div>
 
 <div class="table-card" >
+    <div class="fa-solid">
+    <hr>
 
-<hr>
+    <h2>Minhas Receitas</h2>
 
-<h2>Minhas Receitas</h2>
+        <div class="table-container fa-solid">
 
-    <div class="table-container">
+            <table class="usuarios-table">
 
-        <table class="usuarios-table">
+                <thead>
 
-            <thead>
+                    <tr>
 
-                <tr>
+                        
+                        <th>Descrição</th>
+                        <th>Categoria</th>
+                        <th>Valor</th>
+                        <th>Recebimento</th>
+                        <th>Recorrente</th>
+                        <th>Ações</th>
 
-                    <th>ID</th>
-                    <th>Descrição</th>
-                    <th>Categoria</th>
-                    <th>Valor</th>
-                    <th>Recebimento</th>
-                    <th>Recorrente</th>
-                    <th>Ações</th>
+                    </tr>
 
-                </tr>
+                </thead>
 
-            </thead>
+                <tbody>
 
-            <tbody>
+                    {% for receita in receitas %}
 
-                {% for receita in receitas %}
+                    <tr>
 
-                <tr>
+                        
 
-                    <td>{{ receita[0] }}</td>
+                        <td>{{ receita[1] }}</td>
 
-                    <td>{{ receita[1] }}</td>
+                        <td> 
+                            <span class="badge-categoria"> {{ receita[2] }} </span>
+                        </td>
 
-                    <td> 
-                        <span class="badge-categoria"> {{ receita[2] }} </span>
-                    </td>
+                        <td>R$ {{ receita[3] }}</td>
 
-                    <td>R$ {{ receita[3] }}</td>
+                        <td>{{ receita[4] }}</td>
 
-                    <td>{{ receita[4] }}</td>
+                        <td>
 
-                    <td>
+                            {% if receita[5] %}
 
-                        {% if receita[5] %}
+                            <button class="btn btn-navsec"><i class="fa-solid fa-rotate"></i> </button>
 
-                        <button class="btn btn-navsec"><i class="fa-solid fa-rotate"></i> </button>
+                            {% else %}
 
-                        {% else %}
+                        <button class="btn btn-navsec"><i class="fa-solid fa-calendar-day"></i></button> 
 
-                       <button class="btn btn-navsec"><i class="fa-solid fa-calendar-day"></i></button> 
+                            {% endif %}
 
-                        {% endif %}
+                        </td>
 
-                    </td>
+                        <td>
 
-                    <td>
+                            <a href="{{ url_for('editar_receita', id=receita[0]) }}" class="btn btn-navsec fa-solid fa-pen"></a>
 
-                        <a href="{{ url_for('editar_receita', id=receita[0]) }}" class="btn btn-navsec fa-solid fa-pen"></a>
+                            <a href="{{ url_for('excluir_receita', id=receita[0]) }}" class="btn btn-negativo fa-solid fa-trash"  onclick="return confirm('Deseja realmente excluir esta receita?')"></a>
+                        
+                        </td>
 
-                        <a href="{{ url_for('excluir_receita', id=receita[0]) }}" class="btn btn-negativo fa-solid fa-trash"  onclick="return confirm('Deseja realmente excluir esta receita?')"></a>
-                    
-                    </td>
+                    </tr>
 
-                </tr>
+                    {% endfor %}
 
-                {% endfor %}
+                </tbody>
 
-            </tbody>
+            </table>
 
-        </table>
+        </div>
 
     </div>
-
 </div>
 {% endblock %}

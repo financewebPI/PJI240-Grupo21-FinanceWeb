@@ -142,110 +142,110 @@
 </div>
 
 <div class="table-card">
+    <div class="fa-solid">
+        <hr>
 
-    <hr>
+        <h2>Minhas Metas</h2>
 
-    <h2>Minhas Metas</h2>
+        <div class="table-container">
 
-    <div class="table-container">
+            <table class="usuarios-table">
 
-        <table class="usuarios-table">
+                <thead>
 
-            <thead>
+                    <tr>
 
-                <tr>
+                        
+                        <th>Título</th>
+                        <th>Meta</th>
+                        <th>Atual</th>
+                        <th>Progresso</th>
+                        <th>Prazo</th>
+                        <th>Status</th>
+                        <th>Ações</th>
 
-                    <th>ID</th>
-                    <th>Título</th>
-                    <th>Meta</th>
-                    <th>Atual</th>
-                    <th>Progresso</th>
-                    <th>Prazo</th>
-                    <th>Status</th>
-                    <th>Ações</th>
+                    </tr>
 
-                </tr>
+                </thead>
 
-            </thead>
+                <tbody>
 
-            <tbody>
+                    {% for meta in metas %}
 
-                {% for meta in metas %}
+                    <tr>
 
-                <tr>
+                        
 
-                    <td>{{ meta[0] }}</td>
+                        <td>{{ meta[1] }}</td>
 
-                    <td>{{ meta[1] }}</td>
+                        <td>R$ {{ meta[2] }}</td>
 
-                    <td>R$ {{ meta[2] }}</td>
+                        <td>R$ {{ meta[3] }}</td>
 
-                    <td>R$ {{ meta[3] }}</td>
+                        <td>
 
-                    <td>
+                            {% if meta[2] > 0 %}
 
-                        {% if meta[2] > 0 %}
+                                {{ ((meta[3] / meta[2]) * 100)|round(0) }}%
 
-                            {{ ((meta[3] / meta[2]) * 100)|round(0) }}%
+                            {% else %}
 
-                        {% else %}
+                                0%
 
-                            0%
+                            {% endif %}
 
-                        {% endif %}
+                        </td>
 
-                    </td>
+                        <td>{{ meta[4] }}</td>
 
-                    <td>{{ meta[4] }}</td>
+                        <td>
 
-                    <td>
+                            {% if meta[5] == "Concluída" %}
 
-                        {% if meta[5] == "Concluída" %}
+                                <span class="badge-paga">
 
-                            <span class="badge-paga">
+                                    Concluída
 
-                                Concluída
+                                </span>
 
-                            </span>
+                            {% elif meta[5] == "Em andamento" %}
 
-                        {% elif meta[5] == "Em andamento" %}
+                                <span class="badge-pendente">
 
-                            <span class="badge-pendente">
+                                    Em andamento
 
-                                Em andamento
+                                </span>
 
-                            </span>
+                            {% else %}
 
-                        {% else %}
+                                <span class="badge-cancelada">
 
-                            <span class="badge-cancelada">
+                                    Cancelada
 
-                                Cancelada
+                                </span>
 
-                            </span>
+                            {% endif %}
 
-                        {% endif %}
+                        </td>
 
-                    </td>
+                        <td>
 
-                    <td>
+                            <a href="{{ url_for('editar_meta', id=meta[0]) }}" class="btn btn-navsec fa-solid fa-pen"></a>
 
-                        <a href="{{ url_for('editar_meta', id=meta[0]) }}" class="btn btn-navsec fa-solid fa-pen"></a>
+                            <a href="{{ url_for('excluir_meta', id=meta[0]) }}" class="btn btn-negativo fa-solid fa-trash"  onclick="return confirm('Deseja realmente excluir esta receita?')"></a>
+                        
+                        </td>
 
-                        <a href="{{ url_for('excluir_meta', id=meta[0]) }}" class="btn btn-negativo fa-solid fa-trash"  onclick="return confirm('Deseja realmente excluir esta receita?')"></a>
-                    
-                    </td>
+                    </tr>
 
-                </tr>
+                    {% endfor %}
 
-                {% endfor %}
+                </tbody>
 
-            </tbody>
+            </table>
 
-        </table>
+        </div>
 
     </div>
-
 </div>
-
 {% endblock %}

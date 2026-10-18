@@ -6,6 +6,7 @@ from flask import Flask, render_template, request, redirect, url_for, flash, ses
 from werkzeug import Response
 from database import conectar
 
+
 app = Flask(
     __name__,
     template_folder="app/templates",
@@ -2039,13 +2040,21 @@ def despesas():
     # LISTAR DESPESAS
     # =====================================
 
+    filtro_status = request.args.get(
+        "status",
+        ""
+    )
+    filtro_periodo = request.args.get(
+    "periodo",
+    ""
+    )
+
     try:
 
         con = conectar()
         cursor = con.cursor()
 
-        cursor.execute(
-            """
+        sql = """
             SELECT
                 id,
                 descricao,
@@ -2055,11 +2064,42 @@ def despesas():
                 status
             FROM despesas
             WHERE usuario_id = %s
-            ORDER BY id DESC
-            """,
-            (
-                session["usuario_id"],
+        """
+
+        parametros = [
+            session["usuario_id"]
+        ]
+
+        if filtro_status:
+
+            sql += """
+            AND status = %s
+            """
+
+            parametros.append(
+                filtro_status
             )
+
+        if filtro_periodo:
+
+            sql += """
+            AND TO_CHAR(
+                data_vencimento,
+                'YYYY-MM'
+            ) = %s
+            """
+
+            parametros.append(
+                filtro_periodo
+            )
+
+        sql += """
+        ORDER BY id DESC
+        """
+
+        cursor.execute(
+            sql,
+            tuple(parametros)
         )
 
         despesas_usuario = cursor.fetchall()
@@ -2075,8 +2115,10 @@ def despesas():
 
     return render_template(
         "despesas.html",
-        despesas=despesas_usuario
-    )
+        despesas=despesas_usuario,
+        filtro_status=filtro_status,
+        filtro_periodo=filtro_periodo
+        )
 
 # ------------------ Rota para editar Despesas ------------------ #
 

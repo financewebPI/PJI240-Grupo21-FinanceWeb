@@ -4,6 +4,7 @@
 
 <div class="form-card">
 
+
     <h1>Despesas</h1>
 
     <p>
@@ -173,15 +174,87 @@
 
     </form>
 
+
 </div>
 
-<div class="table-card">
+
+<div class="table-card ">
 
     <hr>
-
+<div class="fa-solid">
     <h2>Minhas Despesas</h2>
+</div>
 
-    <div class="table-container">
+<form method="GET" class="filtro-form  fa-solid">
+
+<br><br>
+
+    <div class="fa-filter">
+
+        <label for="status">
+            Status:
+        </label>
+
+        <select name="status">
+
+                <option value="">
+                    Todas
+                </option>
+
+                <option
+                    value="Pendente"
+                    {% if filtro_status == "Pendente" %}selected{% endif %}
+                >
+                    Pendentes
+                </option>
+
+                <option
+                    value="Paga"
+                    {% if filtro_status == "Paga" %}selected{% endif %}
+                >
+                    Pagas
+                </option>
+
+                <option
+                    value="Atrasada"
+                    {% if filtro_status == "Atrasada" %}selected{% endif %}
+                >
+                    Atrasadas
+                </option>
+
+                <option
+                    value="Cancelada"
+                    {% if filtro_status == "Cancelada" %}selected{% endif %}
+                >
+                    Canceladas
+                </option>
+
+            </select>
+
+        <label for="periodo">
+            Período:
+        </label>
+
+        <input
+            type="month"
+            id="periodo"
+            name="periodo"
+            value="{{ filtro_periodo }}"
+        >
+
+        <button type="submit" class="btn btn-navpri fa-solid fa-magnifying-glass"> 
+                Filtrar
+            </button>
+
+            <a href="{{ url_for('despesas') }}"
+            class="btn btn-navsec fa-solid fa-right-from-bracket">
+            Limpar
+            </a>
+
+    </div>
+</form>
+
+    <div class="table-container fa-solid ">
 
         <table class="usuarios-table">
 
@@ -189,7 +262,7 @@
 
                 <tr>
 
-                    <th>ID</th>
+                    
                     <th>Descrição</th>
                     <th>Categoria</th>
                     <th>Valor</th>
@@ -207,7 +280,7 @@
 
                 <tr>
 
-                    <td>{{ despesa[0] }}</td>
+                    
 
                     <td>{{ despesa[1] }}</td>
 
@@ -287,6 +360,10 @@
 
     </div>
 
-</div>
 
+
+
+
+
+</div>
 {% endblock %}

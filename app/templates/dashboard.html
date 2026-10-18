@@ -565,14 +565,18 @@ new Chart(
                     label: 'Receitas',
                     data: {{ receitas_mensais | tojson }},
                     borderColor: '#22c55e',
-                    backgroundColor: '#22c55e'
+                    backgroundColor: '#22c55e',
+                    borderWidth: 3,
+                    tension: 0.3
                 },
 
                 {
                     label: 'Despesas',
                     data: {{ despesas_mensais | tojson }},
                     borderColor: '#ef4444',
-                    backgroundColor: '#ef4444'
+                    backgroundColor: '#ef4444',
+                    borderWidth: 3,
+                    tension: 0.3
                 },
 
                 {
